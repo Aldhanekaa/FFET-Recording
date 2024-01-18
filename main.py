@@ -2,6 +2,7 @@ import cv2
 import tkinter as tk
 import time
 import imageio
+import datetime 
 from recording import Recording
 from PIL import Image, ImageTk
 
@@ -12,15 +13,20 @@ global recordControlBtn
 def with_opencv(filename):
     video = cv2.VideoCapture(filename)
 
-    duration = video.get(cv2.CAP_PROP_POS_MSEC)
+    fps = video.get(cv2.CAP_PROP_FPS)
     frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
 
-    return duration, frame_count
+    seconds = round(frame_count / fps) 
+    duration = datetime.timedelta(seconds=seconds) 
+
+
+    return duration, frame_count, fps
 
 
 video_name = "./video.mp4"
 video = imageio.get_reader(video_name)
-duration, frame_count = with_opencv(video_name)
+duration, frame_count, fps = with_opencv(video_name)
+print(fps)
 recording = Recording()
 recorded_fileName = ""
 
@@ -42,7 +48,7 @@ def video_frame_generator():
 
         # introduce a wait loop so movie is real time -- asuming frame rate is 24 fps
         # if there is no wait check if time needs to be reset in the event the video was paused
-        _time += 1 / 60
+        _time += 1/600
         run_time = current_time() - start_time
         while run_time < _time:
             run_time = current_time() - start_time
@@ -51,7 +57,7 @@ def video_frame_generator():
                 start_time = current_time()
                 _time = 0
 
-        yield frame, image
+        yield frame, image, run_time
 
 
 def _pause():
@@ -96,6 +102,10 @@ if __name__ == "__main__":
     # Create a button to submit the entered text
     submit_button = tk.Button(root, text="Submit", command=on_submit)
     submit_button.pack(side=tk.RIGHT)
+
+    durationText = tk.Label(root, text="Loading..")
+    durationText.pack(side=tk.BOTTOM)
+
     entry.pack(side=tk.RIGHT, padx=4)
 
     def _recordBtnControl():
@@ -146,23 +156,37 @@ if __name__ == "__main__":
 
     root.protocol("WM_DELETE_WINDOW", on_close)
 
+    startRunning = None
+    runningDuration = 0
 
     while True:
         if not pause_video:
             recording.runRecording()
+            recording_state = recording.getRecordingState()
+
+            if recording_state == "stop":
+                pass
+            elif recording_state == "recording":
+                if startRunning is None:
+                    startRunning = time.time()
+                
+                if startRunning is not None:
+                    currentTime = time.time()
+                    runningDuration = round(currentTime - startRunning)
 
             try:
-                frame_number, frame = next(movie_frame)
+                frame_number, frame, run_time = next(movie_frame)
                 test_video.config(image=frame)
+                root.update()
+                durationText["text"] = f"{datetime.timedelta(seconds=runningDuration) } / {duration}"
+                
             except:
                 _reset()
 
             # my_label.config(image=frame)
 
-        root.update()
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            root.destroy()
-            recording.stop()
-            break
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     root.destroy()
+        #     recording.stop()
+        #     break
     root.mainloop()
