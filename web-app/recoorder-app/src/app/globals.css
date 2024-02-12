@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.recordingStatus {
+  animation: recordingStatusKeyframe 1.2s linear infinite;
+}
+@keyframes recordingStatusKeyframe {
+  0% {
+    background: rgb(239 68 68);
+  }
+  50% {
+    background: rgb(226 232 240);
+  }
+  100% {
+    background: rgb(239 68 68);
+  }
+}
